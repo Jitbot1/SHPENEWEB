@@ -1,0 +1,223 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function isCurrentUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isOfficer() {
+      return isSignedIn() && (
+        (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com") ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "officer")
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com";
+    }
+
+    function isTxStateEmail(email) {
+      return email is string && (
+        email.lower().matches('^[a-zA-Z0-9._%+-]+@txstate\\.edu$') ||
+        email.lower() == "shpetxst@gmail.com"
+      );
+    }
+
+    // Connection check document
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Users Collection (Public leaderboard & member profiles; writes strictly restricted)
+    match /users/{userId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isValidId(userId) && (
+        isAdmin() ||
+        (isCurrentUser(userId) &&
+         incoming().uid == request.auth.uid &&
+         incoming().email is string && incoming().email.size() <= 254 &&
+         incoming().displayName is string && incoming().displayName.size() <= 120 &&
+         incoming().role in ['officer', 'member', 'non_member'] &&
+         (incoming().role == 'non_member' || (incoming().role == 'officer' && isAdmin())))
+      );
+      allow update: if isValidId(userId) && (
+        isAdmin() ||
+        isOfficer() ||
+        (isCurrentUser(userId) &&
+         incoming().diff(existing()).affectedKeys().hasOnly([
+           'displayName', 'fullName', 'isShpetinasMember', 'showOnLeaderboard', 'photoURL', 'email', 'netid', 'major', 'gradYear', 'studentId', 
+           'txstateEmail', 'txstateVerified', 'isNetIDVerified', 'netidVerifiedAt', 'emailVerified', 'isVerified', 'verifiedAt',
+           'verificationCode', 'verificationSentAt', 'otpCode', 'otpExpiresAt', 'otpCreatedAt', 'updatedAt',
+           'netIdVerificationCode', 'codeExpiresAt', 'netIdVerification',
+           'isDuePaying', 'isPaidMember', 'committee', 'membershipYear', 'membershipVerifiedAt', 'membershipVerifiedBy',
+           'meritPoints', 'attendanceCount', 'attendanceHistory'
+         ]) &&
+         incoming().uid == existing().uid &&
+         incoming().email is string && incoming().email.size() <= 254 &&
+         incoming().role == existing().role)
+      );
+      allow delete: if isAdmin() || isCurrentUser(userId);
+    }
+
+    // Temporary 6-digit OTP verification codes collection
+    match /verificationCodes/{userId} {
+      allow read, write: if isSignedIn() && isCurrentUser(userId) && isValidId(userId);
+    }
+
+    // Outbound email queue for Firebase Trigger Email extension
+    match /mail/{mailId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn() && isAdmin();
+    }
+
+    // Officers Roster Collection (managed strictly by admin shpetxst@gmail.com)
+    match /officers/{officerId} {
+      allow read: if true;
+      allow create, update, delete: if (isAdmin() || (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com")) && isValidId(officerId);
+    }
+
+    // Sponsors Collection (managed strictly by admin shpetxst@gmail.com)
+    match /sponsors/{sponsorId} {
+      allow read: if true;
+      allow create, update, delete: if (isAdmin() || (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com")) && isValidId(sponsorId);
+    }
+
+    // Committees Collection
+    match /committees/{committeeId} {
+      allow read: if true;
+      allow create: if isOfficer() && isValidId(committeeId) &&
+        incoming().id == committeeId &&
+        incoming().name is string && incoming().name.size() <= 100 &&
+        incoming().description is string && incoming().description.size() <= 2000;
+      allow update: if isOfficer() && isValidId(committeeId);
+      allow delete: if isOfficer() && isValidId(committeeId);
+    }
+
+    // Settings Collection (Google Slides events presentation strictly managed by admin)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if (isAdmin() || (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com")) && isValidId(settingId);
+    }
+
+    // Slideshows Collection
+    match /slideshows/{slideshowId} {
+      allow read: if true;
+      allow create: if isOfficer() && isValidId(slideshowId) &&
+        incoming().id == slideshowId &&
+        incoming().createdById == request.auth.uid &&
+        incoming().title is string && incoming().title.size() <= 120 &&
+        incoming().designatedUploaderEmail is string && incoming().designatedUploaderEmail.size() <= 254;
+      allow update: if isOfficer() && isValidId(slideshowId) &&
+        incoming().id == existing().id &&
+        incoming().createdById == existing().createdById;
+      allow delete: if isOfficer() && isValidId(slideshowId);
+
+      // Photos subcollection
+      match /photos/{photoId} {
+        allow read: if true;
+        allow create: if isSignedIn() && isValidId(photoId) &&
+          incoming().id == photoId &&
+          incoming().slideshowId == slideshowId &&
+          incoming().uploadedById == request.auth.uid &&
+          incoming().imageUrl is string && incoming().imageUrl.size() <= 800000 &&
+          (
+            isOfficer() ||
+            (request.auth.token.email != null &&
+             request.auth.token.email.lower() == get(/databases/$(database)/documents/slideshows/$(slideshowId)).data.designatedUploaderEmail.lower()) ||
+            request.auth.uid == get(/databases/$(database)/documents/slideshows/$(slideshowId)).data.createdById
+          );
+        allow update, delete: if isSignedIn() && isValidId(photoId) && (
+          isOfficer() ||
+          existing().uploadedById == request.auth.uid
+        );
+      }
+    }
+
+    // Events Collection (Active meeting and attendance code management)
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn() && (
+        isAdmin() || 
+        isOfficer() || 
+        (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com")
+      ) && isValidId(eventId);
+    }
+
+    // Attendance History & Event Logs (Real check-in records and points tracking)
+    match /attendanceHistory/{historyId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(historyId);
+      allow update, delete: if isSignedIn() && (
+        isAdmin() || 
+        isOfficer() || 
+        (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com")
+      ) && isValidId(historyId);
+    }
+
+    // Attendance Logs (Time logs & participation records for QR scanning and event tracking)
+    match /attendanceLogs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(logId);
+      allow update, delete: if isSignedIn() && (
+        isAdmin() || 
+        isOfficer() || 
+        (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com")
+      ) && isValidId(logId);
+    }
+
+    // Weekly Announcements (native image gallery slideshow replacing Google Slides)
+    match /weeklyAnnouncements/{announcementId} {
+      allow read: if true;
+      allow create, update, delete: if (isAdmin() || (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com")) && isValidId(announcementId);
+    }
+
+    // Site Images (Direct image management by admin shpetxst@gmail.com)
+    match /siteImages/{imageId} {
+      allow read: if true;
+      allow create, update, delete: if (isAdmin() || (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com")) && isValidId(imageId);
+    }
+
+    // Mentorship Applications (MentorSHPE program applications)
+    match /mentorshipApplications/{appId} {
+      allow read: if isOfficer() || isAdmin() || (isSignedIn() && request.auth.uid == resource.data.userId);
+      allow create: if isSignedIn() && isValidId(appId);
+      allow update, delete: if (isOfficer() || isAdmin()) && isValidId(appId);
+    }
+
+    // MentorSHPE Program Content & Guidelines (editable by admin)
+    match /mentorProgram/{docId} {
+      allow read: if true;
+      allow write: if (isAdmin() || (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com")) && isValidId(docId);
+    }
+
+    // MentorSHPE Photo Gallery (photos stored in Firebase Storage, managed by admin)
+    match /mentorShpeGallery/{photoId} {
+      allow read: if true;
+      allow create, update, delete: if (isAdmin() || (request.auth.token.email != null && request.auth.token.email.lower() == "shpetxst@gmail.com")) && isValidId(photoId);
+    }
+  }
+}

@@ -1,0 +1,343 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered chapter user profile with Texas State verification and membership status",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 254 },
+        "displayName": { "type": "string", "maxLength": 120 },
+        "fullName": { "type": "string", "maxLength": 120 },
+        "isShpetinasMember": { "type": "boolean" },
+        "photoURL": { "type": "string", "maxLength": 2048 },
+        "role": { "type": "string", "enum": ["officer", "member", "non_member"] },
+        "major": { "type": "string", "maxLength": 100 },
+        "gradYear": { "type": "string", "maxLength": 30 },
+        "studentId": { "type": "string", "maxLength": 30 },
+        "isPaidMember": { "type": "boolean" },
+        "isDuePaying": { "type": "boolean" },
+        "meritPoints": { "type": "number" },
+        "attendanceCount": { "type": "number" },
+        "attendanceHistory": { "type": "array" },
+        "membershipVerifiedAt": { "type": "string", "format": "date-time" },
+        "membershipVerifiedBy": { "type": "string", "maxLength": 128 },
+        "membershipYear": { "type": "string", "maxLength": 30 },
+        "twoFactorVerified": { "type": "boolean" },
+        "netid": { "type": "string", "maxLength": 10 },
+        "isNetIDVerified": { "type": "boolean" },
+        "showOnLeaderboard": { "type": "boolean" },
+        "netidVerifiedAt": { "type": "string", "format": "date-time" },
+        "emailVerified": { "type": "boolean" },
+        "isVerified": { "type": "boolean" },
+        "verifiedAt": { "type": "string", "format": "date-time" },
+        "txstateVerified": { "type": "boolean" },
+        "txstateEmail": { "type": "string", "maxLength": 254 },
+        "verificationCode": { "type": "string", "maxLength": 10 },
+        "verificationSentAt": { "type": "string", "format": "date-time" },
+        "netIdVerificationCode": { "type": "string", "maxLength": 10 },
+        "codeExpiresAt": { "type": "string", "format": "date-time" },
+        "netIdVerification": { "type": "object" },
+        "committee": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "role"]
+    },
+    "Committee": {
+      "title": "Committee",
+      "description": "Chapter committee managed by officers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "meetingInfo": { "type": "string", "maxLength": 500 },
+        "leadOfficer": { "type": "string", "maxLength": 100 },
+        "benefits": { "type": "array" },
+        "photos": { "type": "array" },
+        "officerEmails": { "type": "array" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "name", "description"]
+    },
+    "Slideshow": {
+      "title": "Slideshow",
+      "description": "Officer created event showcase slideshow on the homepage",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "committee": { "type": "string", "maxLength": 64 },
+        "createdById": { "type": "string", "maxLength": 128 },
+        "createdByEmail": { "type": "string", "maxLength": 254 },
+        "designatedUploaderEmail": { "type": "string", "maxLength": 254 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "createdById", "designatedUploaderEmail"]
+    },
+    "Photo": {
+      "title": "Photo",
+      "description": "Event photo belonging to a slideshow uploaded by designated user or officer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "slideshowId": { "type": "string", "maxLength": 64 },
+        "imageUrl": { "type": "string", "maxLength": 800000 },
+        "caption": { "type": "string", "maxLength": 500 },
+        "uploadedById": { "type": "string", "maxLength": 128 },
+        "uploadedByEmail": { "type": "string", "maxLength": 254 },
+        "uploadedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "slideshowId", "imageUrl", "uploadedById", "uploadedByEmail"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Configuration parameters such as Google Slides embed URL",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "value": { "type": "string", "maxLength": 2048 },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "value"]
+    },
+    "OfficerProfile": {
+      "title": "OfficerProfile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 120 },
+        "gradYear": { "type": "string", "maxLength": 30 },
+        "major": { "type": "string", "maxLength": 100 },
+        "position": { "type": "string", "maxLength": 100 },
+        "image": { "type": "string", "maxLength": 800000 },
+        "group": { "type": "string", "enum": ["Executive Board", "Board of Directors"] },
+        "linkedin": { "type": "string", "maxLength": 500 },
+        "bio": { "type": "string", "maxLength": 2000 },
+        "order": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "position", "group"]
+    },
+    "Sponsor": {
+      "title": "Sponsor",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 120 },
+        "subtitle": { "type": "string", "maxLength": 250 },
+        "website": { "type": "string", "maxLength": 500 },
+        "image": { "type": "string", "maxLength": 800000 },
+        "alt": { "type": "string", "maxLength": 120 },
+        "order": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "title", "website"]
+    },
+    "AttendanceLog": {
+      "title": "AttendanceLog",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "memberName": { "type": "string", "maxLength": 120 },
+        "netid": { "type": "string", "maxLength": 20 },
+        "email": { "type": "string", "maxLength": 254 },
+        "eventName": { "type": "string", "maxLength": 200 },
+        "pointsAwarded": { "type": "number" },
+        "memberStatus": { "type": "string", "enum": ["active_member", "guest_visitor"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "date": { "type": "string", "maxLength": 20 },
+        "arrivalTime": { "type": "string", "maxLength": 30 },
+        "scannedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "memberName", "eventName", "memberStatus"]
+    },
+    "WeeklyAnnouncement": {
+      "title": "WeeklyAnnouncement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 120 },
+        "weekLabel": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "imageUrl": { "type": "string", "maxLength": 800000 },
+        "uploadedBy": { "type": "string", "maxLength": 128 },
+        "active": { "type": "boolean" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "imageUrl"]
+    },
+    "SiteImage": {
+      "title": "SiteImage",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 500 },
+        "currentUrl": { "type": "string", "maxLength": 800000 },
+        "category": { "type": "string", "maxLength": 50 },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "title", "currentUrl"]
+    },
+    "MentorshipApplication": {
+      "title": "MentorshipApplication",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["mentor", "mentee"] },
+        "userId": { "type": "string", "maxLength": 128 },
+        "fullName": { "type": "string", "maxLength": 120 },
+        "email": { "type": "string", "maxLength": 254 },
+        "netid": { "type": "string", "maxLength": 20 },
+        "major": { "type": "string", "maxLength": 100 },
+        "gradYear": { "type": "string", "maxLength": 30 },
+        "interestsOrExperience": { "type": "string", "maxLength": 2000 },
+        "goalsOrAdvice": { "type": "string", "maxLength": 2000 },
+        "capacity": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "paired", "reviewed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "type", "fullName", "email", "status"]
+    },
+    "MentorProgramConfig": {
+      "title": "MentorProgramConfig",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "programTitle": { "type": "string", "maxLength": 120 },
+        "programSubtitle": { "type": "string", "maxLength": 300 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "academicGuidance": { "type": "string", "maxLength": 1000 },
+        "careerGuidance": { "type": "string", "maxLength": 1000 },
+        "familiaGuidance": { "type": "string", "maxLength": 1000 },
+        "mentorGuidelines": { "type": "array", "items": { "type": "string" } },
+        "menteeGuidelines": { "type": "array", "items": { "type": "string" } },
+        "mentorApplyLink": { "type": "string", "maxLength": 500 },
+        "menteeApplyLink": { "type": "string", "maxLength": 500 },
+        "contactEmail": { "type": "string", "maxLength": 254 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "programTitle", "description"]
+    },
+    "MentorShpePhoto": {
+      "title": "MentorShpePhoto",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 120 },
+        "caption": { "type": "string", "maxLength": 500 },
+        "imageUrl": { "type": "string", "maxLength": 800000 },
+        "uploadedAt": { "type": "string", "format": "date-time" },
+        "uploadedBy": { "type": "string", "maxLength": 254 }
+      },
+      "required": ["id", "imageUrl"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Chapter event with attendance code and point value",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "attendanceCode": { "type": "string", "maxLength": 64 },
+        "points": { "type": "number" },
+        "active": { "type": "boolean" },
+        "date": { "type": "string", "maxLength": 30 },
+        "location": { "type": "string", "maxLength": 200 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "attendanceCode", "points", "active"]
+    },
+    "AttendanceHistory": {
+      "title": "AttendanceHistory",
+      "description": "Live attendance check-in records linking students, events, and point transactions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "netId": { "type": "string", "maxLength": 30 },
+        "eventId": { "type": "string", "maxLength": 128 },
+        "eventName": { "type": "string", "maxLength": 200 },
+        "pointsEarned": { "type": "number" },
+        "memberStatus": { "type": "string", "enum": ["active_member", "guest_visitor"] },
+        "memberName": { "type": "string", "maxLength": 120 },
+        "email": { "type": "string", "maxLength": 254 },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "netId", "eventId", "pointsEarned"]
+    },
+    "MailMessage": {
+      "title": "MailMessage",
+      "description": "Trigger Email extension outbound message document",
+      "type": "object",
+      "properties": {
+        "to": { "type": "string", "maxLength": 254 },
+        "message": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["to", "message"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" }
+    },
+    "/mail/{mailId}": {
+      "schema": { "$ref": "#/entities/MailMessage" }
+    },
+    "/officers/{officerId}": {
+      "schema": { "$ref": "#/entities/OfficerProfile" }
+    },
+    "/sponsors/{sponsorId}": {
+      "schema": { "$ref": "#/entities/Sponsor" }
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Setting" }
+    },
+    "/committees/{committeeId}": {
+      "schema": { "$ref": "#/entities/Committee" }
+    },
+    "/slideshows/{slideshowId}": {
+      "schema": { "$ref": "#/entities/Slideshow" },
+      "description": "Officer created slideshow displays with designated photo uploader"
+    },
+    "/slideshows/{slideshowId}/photos/{photoId}": {
+      "schema": { "$ref": "#/entities/Photo" }
+    },
+    "/events/{eventId}": {
+      "schema": { "$ref": "#/entities/Event" }
+    },
+    "/attendanceHistory/{historyId}": {
+      "schema": { "$ref": "#/entities/AttendanceHistory" }
+    },
+    "/attendanceLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AttendanceLog" }
+    },
+    "/weeklyAnnouncements/{announcementId}": {
+      "schema": { "$ref": "#/entities/WeeklyAnnouncement" }
+    },
+    "/siteImages/{imageId}": {
+      "schema": { "$ref": "#/entities/SiteImage" }
+    },
+    "/mentorshipApplications/{applicationId}": {
+      "schema": { "$ref": "#/entities/MentorshipApplication" }
+    },
+    "/mentorProgram/{docId}": {
+      "schema": { "$ref": "#/entities/MentorProgramConfig" }
+    },
+    "/mentorShpeGallery/{photoId}": {
+      "schema": { "$ref": "#/entities/MentorShpePhoto" }
+    }
+  }
+}
